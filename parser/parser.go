@@ -4,13 +4,20 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"github.com/masahiro331/go-license/lexer"
 	"github.com/masahiro331/go-license/token"
 )
 
+var (
+	ErrInvalidExpression = xerrors.New("invalid expression error")
+)
+
 type Pair struct {
-	root   *LicenseExpression
-	cursor *LicenseExpression
+	root    *LicenseExpression
+	cursor  *LicenseExpression
+	bracket token.TokenType
 }
 
 type Stack []Pair
@@ -48,7 +55,7 @@ func (l *LicenseExpression) String() string {
 	for ; cursor != nil; cursor = cursor.Next {
 		str = strings.Join([]string{str, cursor.Node.String(), cursor.Operator}, " ")
 	}
-	return str
+	return strings.TrimSpace(str)
 }
 
 func (n Node) String() string {
@@ -58,7 +65,7 @@ func (n Node) String() string {
 	return n.License
 }
 
-func Parse(lex *lexer.Lexer) *LicenseExpression {
+func Parse(lex *lexer.Lexer) (*LicenseExpression, error) {
 	root := &LicenseExpression{}
 	cursor := root
 	stack := Stack{}
@@ -72,20 +79,32 @@ func Parse(lex *lexer.Lexer) *LicenseExpression {
 				cursor.Node.License = fmt.Sprintf("%s %s", cursor.Node.License, tok.Literal)
 			}
 		case token.AND, token.OR:
-			cursor.Operator = tok.Literal
+			cursor.Operator = string(tok.Type)
 			cursor.Next = &LicenseExpression{}
 			cursor = cursor.Next
 		case token.LPAREN, token.LBRACE:
-			p := Pair{root: root, cursor: cursor}
+			p := Pair{root: root, cursor: cursor, bracket: tok.Type}
 			stack.Push(p)
 			root = &LicenseExpression{}
 			cursor = root
 		case token.RPAREN, token.RBRACE:
 			e := stack.Pop()
+			if e.bracket == token.LPAREN {
+				if tok.Type != token.RPAREN {
+					return nil, ErrInvalidExpression
+				}
+			} else if e.bracket == token.LBRACE {
+				if tok.Type != token.RBRACE {
+					return nil, ErrInvalidExpression
+				}
+			}
 			e.cursor.Node.LicenseExpression = root
 			cursor = e.cursor
 			root = e.root
 		}
 	}
-	return root
+	if !stack.IsEmpty() {
+		return nil, ErrInvalidExpression
+	}
+	return root, nil
 }
