@@ -107,7 +107,7 @@ func TestNextToken(t *testing.T) {
 			licenseExpression: "{GPL1.0+ OR GPL2.0}",
 			expectTokens: []token.Token{
 				{
-					Type:    token.LPAREN,
+					Type:    token.LBRACE,
 					Literal: "{",
 				},
 				{
@@ -123,7 +123,7 @@ func TestNextToken(t *testing.T) {
 					Literal: "GPL2.0",
 				},
 				{
-					Type:    token.RPAREN,
+					Type:    token.RBRACE,
 					Literal: "}",
 				},
 			},

@@ -1,9 +1,10 @@
 package parser
 
 import (
-	"github.com/masahiro331/go-license/lexer"
 	"reflect"
 	"testing"
+
+	"github.com/masahiro331/go-license/lexer"
 )
 
 func TestParse(t *testing.T) {

@@ -3,8 +3,9 @@ package parser
 
 import (
 	"fmt"
-	"golang.org/x/xerrors"
 	"strings"
+
+	"golang.org/x/xerrors"
 
 	"github.com/masahiro331/go-license/lexer"
 	"github.com/masahiro331/go-license/token"
@@ -42,7 +43,6 @@ func New(lex *lexer.Lexer) *Parser {
 
 func (p *Parser) RegisterNormalizeFunc(fn NormalizeFunc) *Parser {
 	p.normalizeFn = fn
-
 	return p
 }
 
