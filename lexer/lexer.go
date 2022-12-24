@@ -27,6 +27,10 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.LPAREN, l.ch)
 	case ')':
 		tok = newToken(token.RPAREN, l.ch)
+	case '{':
+		tok = newToken(token.LBRACE, l.ch)
+	case '}':
+		tok = newToken(token.RBRACE, l.ch)
 	default:
 		if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
@@ -47,7 +51,8 @@ func isLetter(ch byte) bool {
 		ch == '_' ||
 		ch == '+' ||
 		ch == '.' ||
-		ch == '-'
+		ch == '-' ||
+		ch == '='
 }
 
 func (l *Lexer) readIdentifier() string {
