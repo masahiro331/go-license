@@ -52,6 +52,7 @@ func isLetter(ch byte) bool {
 		ch == '+' ||
 		ch == '.' ||
 		ch == '-' ||
+		ch == '/' ||
 		ch == '='
 }
 
