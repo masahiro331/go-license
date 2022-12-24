@@ -18,8 +18,6 @@ var (
 type Parser struct {
 	lex         *lexer.Lexer
 	normalizeFn NormalizeFunc
-
-	root *LicenseExpression
 }
 
 type LicenseExpression struct {
