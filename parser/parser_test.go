@@ -104,6 +104,25 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
+			name:  "happy path 2",
+			input: "( GPLv2+ or CC0 )",
+			want: &LicenseExpression{
+				Node: Node{
+					LicenseExpression: &LicenseExpression{
+						Node: Node{
+							License: "GPLv2+",
+						},
+						Operator: "OR",
+						Next: &LicenseExpression{
+							Node: Node{
+								License: "CC0",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:      "bad path close bracket not found",
 			input:     "Public Domain AND ( GPLv2+ ",
 			expectErr: "invalid expression error",
