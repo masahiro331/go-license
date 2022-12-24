@@ -2,6 +2,7 @@ package parser
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/masahiro331/go-license/lexer"
@@ -11,7 +12,7 @@ func TestParse(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
-		normFunc  NormalizeFunc
+		normFunc  []NormalizeFunc
 		want      *LicenseExpression
 		wantStr   string
 		expectErr string
@@ -28,17 +29,22 @@ func TestParse(t *testing.T) {
 		},
 		{
 			name:  "happy path single license with norm func",
-			input: "Public Domain",
+			input: "Public Domain with exception",
 			want: &LicenseExpression{
 				Node: Node{
-					License: "Public Domain",
+					License: "Public Domain with exception",
 				},
 			},
-			normFunc: func(n string) string {
-				if n == "Public Domain" {
-					return "Unlicense"
-				}
-				return n
+			normFunc: []NormalizeFunc{
+				func(n string) string {
+					return strings.Replace(n, " ", "_", -1)
+				},
+				func(n string) string {
+					if n == "Public_Domain_with_exception" {
+						return "Unlicense"
+					}
+					return n
+				},
 			},
 			wantStr: "Unlicense",
 		},
@@ -165,7 +171,7 @@ func TestParse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			l := lexer.New(tt.input)
-			p := New(l).RegisterNormalizeFunc(tt.normFunc)
+			p := New(l).RegisterNormalizeFunc(tt.normFunc...)
 
 			got, err := p.Parse()
 			if tt.expectErr == "" && err != nil {

@@ -17,7 +17,7 @@ var (
 
 type Parser struct {
 	lex         *lexer.Lexer
-	normalizeFn NormalizeFunc
+	normalizeFn []NormalizeFunc
 }
 
 type LicenseExpression struct {
@@ -39,8 +39,8 @@ func New(lex *lexer.Lexer) *Parser {
 	}
 }
 
-func (p *Parser) RegisterNormalizeFunc(fn NormalizeFunc) *Parser {
-	p.normalizeFn = fn
+func (p *Parser) RegisterNormalizeFunc(fn ...NormalizeFunc) *Parser {
+	p.normalizeFn = append(p.normalizeFn, fn...)
 	return p
 }
 
@@ -101,8 +101,8 @@ func (p *Parser) normalize(n Node) string {
 	if n.LicenseExpression != nil {
 		return fmt.Sprintf("( %s )", p.Normalize(n.LicenseExpression))
 	}
-	if p.normalizeFn != nil {
-		return p.normalizeFn(n.License)
+	for _, fn := range p.normalizeFn {
+		n.License = fn(n.License)
 	}
 	return n.License
 }
