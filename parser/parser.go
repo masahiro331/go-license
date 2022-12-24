@@ -1,10 +1,10 @@
+// Package parser is license expression parser.
 package parser
 
 import (
 	"fmt"
-	"strings"
-
 	"golang.org/x/xerrors"
+	"strings"
 
 	"github.com/masahiro331/go-license/lexer"
 	"github.com/masahiro331/go-license/token"
@@ -13,6 +13,13 @@ import (
 var (
 	ErrInvalidExpression = xerrors.New("invalid expression error")
 )
+
+type Parser struct {
+	lex         *lexer.Lexer
+	normalizeFn NormalizeFunc
+
+	root *LicenseExpression
+}
 
 type LicenseExpression struct {
 	Node     Node
@@ -25,29 +32,26 @@ type Node struct {
 	LicenseExpression *LicenseExpression
 }
 
-func (l *LicenseExpression) String() string {
-	cursor := l
+type NormalizeFunc func(n string) string
 
-	var str string
-	for ; cursor != nil; cursor = cursor.Next {
-		str = strings.Join([]string{str, cursor.Node.String(), cursor.Operator}, " ")
+func New(lex *lexer.Lexer) *Parser {
+	return &Parser{
+		lex: lex,
 	}
-	return strings.TrimSpace(str)
 }
 
-func (n Node) String() string {
-	if n.LicenseExpression != nil {
-		return fmt.Sprintf("(%s)", n.LicenseExpression)
-	}
-	return n.License
+func (p *Parser) RegisterNormalizeFunc(fn NormalizeFunc) *Parser {
+	p.normalizeFn = fn
+
+	return p
 }
 
-func Parse(lex *lexer.Lexer) (*LicenseExpression, error) {
+func (p *Parser) Parse() (*LicenseExpression, error) {
 	root := &LicenseExpression{}
 	cursor := root
 	stack := Stack{}
 
-	for tok := lex.NextToken(); tok.Type != token.EOF; tok = lex.NextToken() {
+	for tok := p.lex.NextToken(); tok.Type != token.EOF; tok = p.lex.NextToken() {
 		switch tok.Type {
 		case token.IDENT:
 			if cursor.Node.License == "" {
@@ -84,4 +88,23 @@ func Parse(lex *lexer.Lexer) (*LicenseExpression, error) {
 		return nil, ErrInvalidExpression
 	}
 	return root, nil
+}
+func (p *Parser) Normalize(l *LicenseExpression) string {
+	cursor := l
+
+	var str string
+	for ; cursor != nil; cursor = cursor.Next {
+		str = strings.Join([]string{str, p.normalize(cursor.Node), cursor.Operator}, " ")
+	}
+	return strings.TrimSpace(str)
+}
+
+func (p *Parser) normalize(n Node) string {
+	if n.LicenseExpression != nil {
+		return fmt.Sprintf("( %s )", p.Normalize(n.LicenseExpression))
+	}
+	if p.normalizeFn != nil {
+		return p.normalizeFn(n.License)
+	}
+	return n.License
 }
